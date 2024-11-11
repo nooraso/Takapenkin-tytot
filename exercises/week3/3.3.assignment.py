@@ -14,7 +14,7 @@ oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
 WINDOW_SIZE = oled_width
 MAX_SCROLL_INDEX = 1000 - WINDOW_SIZE
 MIN_SCROLL_INDEX = 0
-SCROLL_STEP = 10  # Increased scroll step size (adjust this value to change scroll speed)
+SCROLL_STEP = 10  # Increased scroll step size (adjust this value to change scroll speed
 
 # Simple FIFO queue implementation
 turn_fifo = Fifo(size=10)
@@ -70,36 +70,22 @@ def display(values, start_index):
     
     oled.show()
 
+# Set up rotary encoder pins
+encoder_a = Pin(10, Pin.IN, Pin.PULL_UP)
+encoder_b = Pin(11, Pin.IN, Pin.PULL_UP)
+
 def encoder_callback(pin):
-    global last_a, last_b, scroll_index
-    a_val = encoder_a.value()
-    b_val = encoder_b.value()
-    
-    if a_val != last_a or b_val != last_b:
-        if a_val == last_b:
-            try:
-                turn_fifo.put(1)  # Clockwise turn
-            except RuntimeError:
-                pass
+    """Interrupt handler for rotary encoder turns"""
+    try:
+        if encoder_a.value() == encoder_b.value():
+            turn_fifo.put(1)  # Right turn
         else:
-            try:
-                turn_fifo.put(-1)  # Counter-clockwise turn
-            except RuntimeError:
-                pass
-    last_a = a_val
-    last_b = b_val
+            turn_fifo.put(0)  # Left turn
+    except RuntimeError:
+        pass
 
-# Set up rotary encoder pins and interrupts
-encoder_a = Pin(11, Pin.IN, Pin.PULL_UP)
-encoder_b = Pin(12, Pin.IN, Pin.PULL_UP)
-encoder_a.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_callback)
-encoder_b.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_callback)
-
-# Initialize last known states of encoder pins
-last_a = encoder_a.value()
-last_b = encoder_b.value()
-
-# Initial scroll position
+# Set up interrupt on pin A only
+encoder_a.irq(trigger=Pin.IRQ_RISING, handler=encoder_callback)
 scroll_index = 0
 
 # Main loop
@@ -108,12 +94,14 @@ while True:
     if not turn_fifo.empty():
         turn = turn_fifo.get()
         # Update scroll index based on turn with increased step size
-        if turn > 0:
+        if turn == 0:
             scroll_index = min(scroll_index + SCROLL_STEP, MAX_SCROLL_INDEX)
-        elif turn < 0:
+        elif turn == 1:
             scroll_index = max(scroll_index - SCROLL_STEP, MIN_SCROLL_INDEX)
 
     # Display current window of values
     display(values, scroll_index)
     time.sleep(0.05)  # Reduced sleep time for more responsive updates
+
+
 
