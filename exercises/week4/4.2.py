@@ -58,7 +58,7 @@ def plot_window(start_index):
     oled.show()
     return True
 
-# Main loop
+# Main loop 
 start_index = 0
 while plot_window(start_index):
     start_index += 250
