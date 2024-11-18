@@ -2,6 +2,7 @@ from machine import I2C, Pin
 import ssd1306
 import time
 
+
 # Initialize OLED display
 i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
 oled_width = 128
@@ -10,7 +11,7 @@ oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
 
 # Read data first
 data = []
-with open("capture_250Hz_02.txt", "r") as file:
+with open("capture_250Hz_03.txt", "r") as file:
     for line in file:
         data.append(int(line))
 
@@ -62,4 +63,5 @@ def plot_window(start_index):
 start_index = 0
 while plot_window(start_index):
     start_index += 250
-    time.sleep(1)
+    time.sleep(0.3)
+
